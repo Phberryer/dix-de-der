@@ -68,10 +68,20 @@ describe('dedans', () => {
     expect(r.points).toEqual({ A: 0, B: 18 });
   });
 
-  it('la belote compte pour atteindre les 81', () => {
-    const r = evaluateDeal(deal({ enteredPoints: 70, belote: 'A' }));
-    expect(r.outcome).toBe('made');
-    expect(r.raw).toEqual({ A: 90, B: 92 });
+  it('avec belote-rebelote, le contrat passe à 91 et la belote du preneur compte', () => {
+    const made = evaluateDeal(deal({ enteredPoints: 72, belote: 'A' }));
+    expect(made.outcome).toBe('made');
+    expect(made.raw).toEqual({ A: 92, B: 90 });
+    expect(evaluateDeal(deal({ enteredPoints: 70, belote: 'A' })).outcome).toBe('failed');
+    // Belote chez la défense : le preneur doit aussi faire 91.
+    expect(evaluateDeal(deal({ enteredPoints: 85, belote: 'B' })).outcome).toBe('failed');
+    expect(evaluateDeal(deal({ enteredPoints: 92, belote: 'B' })).outcome).toBe('made');
+  });
+
+  it('91 / 91 avec belote-rebelote est une égalité : 9 / 9', () => {
+    const r = previewDeal(deal({ enteredPoints: 71, belote: 'A' }), s101);
+    expect(r.result.outcome).toBe('tie');
+    expect(r.points).toEqual({ A: 9, B: 9 });
   });
 });
 

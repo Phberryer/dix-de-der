@@ -67,10 +67,12 @@ export function evaluateDeal(deal: PlayedDeal): DealResult {
   cards[deal.enteredTeam] = deal.enteredPoints;
   cards[otherTeam(deal.enteredTeam)] = TOTAL_CARD_POINTS - deal.enteredPoints;
 
-  // La belote compte pour atteindre les 81 du contrat.
+  // Le contrat est la moitié des points en jeu : 81 sur 162, ou 91 sur 182 avec belote-rebelote.
+  // La belote du preneur compte pour l'atteindre.
+  const contract = CONTRACT_POINTS + (deal.belote ? BELOTE_POINTS / 2 : 0);
   const takerTotal = cards[takerTeam] + beloteFor(deal, takerTeam);
 
-  if (takerTotal < CONTRACT_POINTS) {
+  if (takerTotal < contract) {
     // Dedans : la défense marque tout, belote comprise.
     const raw: Score = { A: 0, B: 0 };
     raw[defense] = TOTAL_CARD_POINTS + (deal.belote ? BELOTE_POINTS : 0);
@@ -81,7 +83,7 @@ export function evaluateDeal(deal: PlayedDeal): DealResult {
     A: cards.A + beloteFor(deal, 'A'),
     B: cards.B + beloteFor(deal, 'B'),
   };
-  if (takerTotal === CONTRACT_POINTS) {
+  if (takerTotal === contract) {
     return { outcome: 'tie', winner: null, raw };
   }
   return { outcome: 'made', winner: takerTeam, raw };

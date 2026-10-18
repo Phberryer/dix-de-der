@@ -1,8 +1,8 @@
 import { Game, Team, Trump } from '../engine/types';
-// \uFE0E force l'affichage des couleurs en symbole texte plutôt qu'en émoji (notamment sur iPhone).
 
 export const SEAT_LABELS = ['Moi', 'À ma gauche', 'En face', 'À ma droite'] as const;
 
+// \uFE0E force l'affichage des couleurs en symbole texte plutôt qu'en émoji (notamment sur iPhone).
 export const TRUMPS: { value: Trump; label: string; symbol: string }[] = [
   { value: 'pique', label: 'Pique', symbol: '♠\uFE0E' },
   { value: 'coeur', label: 'Cœur', symbol: '♥\uFE0E' },
