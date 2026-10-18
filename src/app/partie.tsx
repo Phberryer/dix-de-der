@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { computeGame, extensionStep, teamOfSeat, TOTAL_CARD_POINTS } from '../engine/scoring';
+import { computeGame, extensionStep, previewDeal, teamOfSeat, TOTAL_CARD_POINTS } from '../engine/scoring';
 import { Game, PlayedDeal, Seat, Team, Trump } from '../engine/types';
 import { useSalon } from '../store/salon';
 import { formatDate, teamName, TRUMPS, trumpSymbol } from '../ui/format';
@@ -198,13 +198,22 @@ function DealForm({
     setTaker(null); setTrump(null); setEnteredTeam(null); setPointsText(''); setBelote(null); setCapot(null);
   };
 
-  const submit = () => {
-    if (!complete) return;
-    onSubmit({
+  const deal: PlayedDeal | null = complete
+    ? {
       kind: 'played', dealer, taker: taker!, trump: trump!,
       enteredTeam: enteredTeam ?? 'A', enteredPoints: capot ? 0 : points,
       belote, capot,
-    });
+    }
+    : null;
+  const preview = deal ? previewDeal(deal, game.settings) : null;
+  const outcomeLabel = !preview ? '' : capot ? 'capot'
+    : preview.result.outcome === 'failed' ? 'dedans'
+    : preview.result.outcome === 'tie' ? (game.settings.suspense ? 'égalité, mise en suspens' : 'égalité')
+    : 'contrat réussi';
+
+  const submit = () => {
+    if (!deal) return;
+    onSubmit(deal);
     reset();
   };
 
@@ -281,6 +290,17 @@ function DealForm({
             <Text style={{ color: colors.red }}>Les points doivent être entre 0 et 162.</Text>
           )}
         </>
+      )}
+
+      {preview && (
+        <View style={{ backgroundColor: colors.background, borderRadius: 10, padding: 10, alignItems: 'center', gap: 2 }}>
+          <Text style={{ fontSize: 20, fontWeight: '800' }}>
+            <Text style={{ color: colors.teamA }}>{preview.points.A}</Text>
+            {' – '}
+            <Text style={{ color: colors.teamB }}>{preview.points.B}</Text>
+          </Text>
+          <Muted>Points inscrits · {outcomeLabel}</Muted>
+        </View>
       )}
 
       <Button label="Valider la donne" disabled={!complete} onPress={submit} />
