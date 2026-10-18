@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { computeGame, teamOfSeat, TOTAL_CARD_POINTS } from '../engine/scoring';
+import { computeGame, extensionStep, teamOfSeat, TOTAL_CARD_POINTS } from '../engine/scoring';
 import { Game, PlayedDeal, Seat, Team, Trump } from '../engine/types';
 import { useSalon } from '../store/salon';
 import { formatDate, teamName, TRUMPS, trumpSymbol } from '../ui/format';
@@ -27,7 +27,7 @@ export default function GameScreen() {
 }
 
 function GameView({ game }: { game: Game }) {
-  const { playerName, addDeal, undoLastDeal, updateDeal, deleteGame } = useSalon();
+  const { playerName, addDeal, undoLastDeal, updateDeal, deleteGame, confirmCapotWin, extendGame } = useSalon();
   const [editing, setEditing] = useState<number | null>(null);
   const state = computeGame(game);
   const names: [string, string] = [teamName(game, 'A', playerName), teamName(game, 'B', playerName)];
@@ -38,7 +38,7 @@ function GameView({ game }: { game: Game }) {
   return (
     <Screen>
       <Card>
-        <Muted>{formatDate(game.createdAt)} · en {game.settings.target}{game.settings.suspense ? ' · point en suspens' : ''}</Muted>
+        <Muted>{formatDate(game.createdAt)} · en {state.target}{game.extensions?.length ? ' (prolongée)' : ''}{game.settings.suspense ? ' · point en suspens' : ''}</Muted>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {(['A', 'B'] as Team[]).map((team, i) => (
             <View key={team} style={{ flex: 1, alignItems: 'center', padding: 10, borderRadius: 12, backgroundColor: teamColor(team) }}>
@@ -52,7 +52,19 @@ function GameView({ game }: { game: Game }) {
             {state.pending.length === 1 ? '1 donne à égalité en suspens' : `${state.pending.length} donnes à égalité en suspens`}
           </Text>
         )}
-        {state.winner ? (
+        {state.winner && !game.finishedAt ? (
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: teamColor(state.winner), textAlign: 'center' }}>
+              {names[state.winner === 'A' ? 0 : 1]} atteignent {state.target} grâce à un capot !
+            </Text>
+            <Button label="Victoire" onPress={() => confirmCapotWin(game.id)} />
+            <Button
+              label={`Prolonger jusqu'à ${state.target + extensionStep(game.settings)}`}
+              kind="secondary"
+              onPress={() => extendGame(game.id)}
+            />
+          </View>
+        ) : state.winner ? (
           <Text style={{ fontSize: 18, fontWeight: '800', color: teamColor(state.winner), textAlign: 'center' }}>
             🏆 {names[state.winner === 'A' ? 0 : 1]} gagnent la partie !
           </Text>
@@ -88,7 +100,7 @@ function GameView({ game }: { game: Game }) {
       {state.lines.length > 0 && (
         <Card>
           <Title>Évolution du score</Title>
-          <ScoreChart totals={state.lines.map((l) => l.total)} target={game.settings.target} labels={names} />
+          <ScoreChart totals={state.lines.map((l) => l.total)} target={state.target} labels={names} />
         </Card>
       )}
 

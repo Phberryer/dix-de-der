@@ -169,6 +169,32 @@ describe('fin de partie', () => {
   });
 });
 
+describe('victoire sur capot', () => {
+  it('est signalée, et une prolongation ajoute 50 points en 101', () => {
+    const deals = [
+      ...Array.from({ length: 5 }, () => deal({ enteredPoints: 150 })), // 75 / 5
+      deal({ capot: 'A' }), // +25 → 100
+      deal({ capot: 'A' }), // +25 → 125 : victoire sur capot
+    ];
+    const g = game(deals);
+    expect(computeGame(g).winner).toBe('A');
+    expect(computeGame(g).wonByCapot).toBe(true);
+
+    const extended = computeGame({ ...g, extensions: [7] });
+    expect(extended.target).toBe(151);
+    expect(extended.winner).toBe(null);
+  });
+
+  it("n'est pas signalée pour une victoire sans capot", () => {
+    const deals = Array.from({ length: 7 }, () => deal({ enteredPoints: 150 }));
+    expect(computeGame(game(deals)).wonByCapot).toBe(false);
+  });
+
+  it('ajoute 500 points quand on ne joue pas en 101', () => {
+    expect(computeGame({ ...game([], s501), extensions: [1, 2] }).target).toBe(1501);
+  });
+});
+
 describe('statistiques', () => {
   const players = ['p0', 'p1', 'p2', 'p3', 'p4'].map((id) => ({ id, name: id }));
 

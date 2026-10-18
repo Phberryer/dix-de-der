@@ -125,7 +125,17 @@ export interface GameState {
   // Indices des donnes à égalité encore en suspens.
   pending: number[];
   winner: Team | null;
+  // L'équipe gagnante a atteint le score de fin grâce à un capot :
+  // on peut alors choisir la victoire ou une prolongation.
+  wonByCapot: boolean;
+  // Score de fin, prolongations comprises.
+  target: number;
   nextDealer: Seat;
+}
+
+// Une prolongation ajoute 50 points en 101, 500 sinon.
+export function extensionStep(settings: GameSettings): number {
+  return usesTenths(settings) ? 50 : 500;
 }
 
 function add(a: Score, b: Score): Score {
@@ -133,8 +143,10 @@ function add(a: Score, b: Score): Score {
 }
 
 // Rejoue toute la partie pour obtenir l'état courant.
-export function computeGame(game: Pick<Game, 'deals' | 'settings' | 'firstDealer'>): GameState {
+export function computeGame(game: Pick<Game, 'deals' | 'settings' | 'firstDealer' | 'extensions'>): GameState {
   const { settings } = game;
+  const target = settings.target + (game.extensions?.length ?? 0) * extensionStep(settings);
+  let wonByCapot = false;
   const lines: DealLine[] = [];
   let total: Score = { A: 0, B: 0 };
   let pending: number[] = [];
@@ -174,12 +186,13 @@ export function computeGame(game: Pick<Game, 'deals' | 'settings' | 'firstDealer
 
     // La partie se termine quand une équipe atteint le score de fin.
     // Si les deux l'atteignent, celle qui a le plus gagne ; en cas d'égalité, on continue.
-    if (!winner && (total.A >= settings.target || total.B >= settings.target) && total.A !== total.B) {
+    if (!winner && (total.A >= target || total.B >= target) && total.A !== total.B) {
       winner = total.A > total.B ? 'A' : 'B';
+      wonByCapot = deal.capot === winner;
     }
   });
 
-  return { lines, total, pending, winner, nextDealer: dealer };
+  return { lines, total, pending, winner, wonByCapot, target, nextDealer: dealer };
 }
 
 // Aperçu des points d'une donne avant de la valider.

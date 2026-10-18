@@ -25,6 +25,8 @@ interface SalonApi {
   addDeal: (gameId: string, deal: Deal) => void;
   undoLastDeal: (gameId: string) => void;
   updateDeal: (gameId: string, index: number, change: Partial<PlayedDeal>) => void;
+  confirmCapotWin: (gameId: string) => void;
+  extendGame: (gameId: string) => void;
   deleteGame: (gameId: string) => void;
   playerName: (id: string) => string;
 }
@@ -32,10 +34,12 @@ interface SalonApi {
 const SalonContext = createContext<SalonApi | null>(null);
 
 // Marque la partie comme terminée dès qu'une équipe a gagné (ou la rouvre après une annulation).
+// Une victoire sur capot n'est définitive qu'une fois acceptée.
 function withFinish(game: Game): Game {
-  const { winner } = computeGame(game);
-  if (winner && !game.finishedAt) return { ...game, finishedAt: new Date().toISOString() };
-  if (!winner && game.finishedAt) return { ...game, finishedAt: null };
+  const { winner, wonByCapot } = computeGame(game);
+  const finished = winner !== null && (!wonByCapot || game.winConfirmed === true);
+  if (finished && !game.finishedAt) return { ...game, finishedAt: new Date().toISOString() };
+  if (!finished && game.finishedAt) return { ...game, finishedAt: null };
   return game;
 }
 
@@ -85,7 +89,13 @@ export function SalonProvider({ children }: { children: ReactNode }) {
       return game;
     },
     addDeal: (gameId, deal) => updateGame(gameId, (g) => ({ ...g, deals: [...g.deals, deal] })),
-    undoLastDeal: (gameId) => updateGame(gameId, (g) => ({ ...g, deals: g.deals.slice(0, -1) })),
+    // Annuler la donne d'un capot annule aussi la prolongation choisie après elle.
+    undoLastDeal: (gameId) => updateGame(gameId, (g) => {
+      const deals = g.deals.slice(0, -1);
+      return { ...g, deals, winConfirmed: false, extensions: g.extensions?.filter((n) => n <= deals.length) };
+    }),
+    confirmCapotWin: (gameId) => updateGame(gameId, (g) => ({ ...g, winConfirmed: true })),
+    extendGame: (gameId) => updateGame(gameId, (g) => ({ ...g, extensions: [...(g.extensions ?? []), g.deals.length] })),
     updateDeal: (gameId, index, change) => updateGame(gameId, (g) => ({
       ...g,
       deals: g.deals.map((d, i) => (i === index && d.kind === 'played' ? { ...d, ...change } : d)),

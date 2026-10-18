@@ -20,7 +20,7 @@ export default function History() {
           <Pressable key={game.id} onPress={() => router.push({ pathname: '/partie', params: { id: game.id } })}>
             <Card style={{ gap: 4 }}>
               <Muted>
-                {formatDate(game.createdAt)} · en {game.settings.target} · {winner ? 'terminée' : 'en cours'}
+                {formatDate(game.createdAt)} · en {game.settings.target} · {game.finishedAt ? 'terminée' : 'en cours'}
               </Muted>
               <Text style={{ fontSize: 16, color: colors.teamA, fontWeight: winner === 'A' ? '800' : '400' }}>
                 {winner === 'A' ? '🏆 ' : ''}{teamName(game, 'A', playerName)} : {total.A}

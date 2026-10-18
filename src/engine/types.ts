@@ -50,6 +50,11 @@ export interface Game {
   firstDealer: Seat;
   settings: GameSettings;
   deals: Deal[];
+  // Prolongations choisies après une victoire sur capot :
+  // pour chacune, le nombre de donnes jouées au moment du choix.
+  extensions?: number[];
+  // Victoire sur capot acceptée (plutôt que prolongée).
+  winConfirmed?: boolean;
 }
 
 export interface Salon {
