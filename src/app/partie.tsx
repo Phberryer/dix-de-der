@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { computeGame, extensionStep, previewDeal, teamOfSeat, TOTAL_CARD_POINTS } from '../engine/scoring';
-import { Game, PlayedDeal, Seat, Team, Trump } from '../engine/types';
+import { DealDraft, Game, PlayedDeal, Seat, Team, Trump } from '../engine/types';
 import { useSalon } from '../store/salon';
 import { formatDate, teamName, TRUMPS, trumpSymbol } from '../ui/format';
 import { Button, Card, colors, Muted, Row, Screen, Segmented, styles, teamColor, Title } from '../ui/kit';
@@ -175,28 +175,29 @@ function GameView({ game }: { game: Game }) {
   );
 }
 
+const EMPTY_DRAFT: DealDraft = {
+  taker: null, trump: null, enteredTeam: null, pointsText: '', belote: null, capot: null,
+};
+
 function DealForm({
   game, dealer, names, onSubmit,
 }: {
   game: Game; dealer: Seat; names: [string, string]; onSubmit: (deal: PlayedDeal) => void;
 }) {
-  const { playerName } = useSalon();
-  const [taker, setTaker] = useState<Seat | null>(null);
-  const [trump, setTrump] = useState<Trump | null>(null);
-  // Les points saisis, et l'équipe sous laquelle on les a saisis.
-  const [enteredTeam, setEnteredTeam] = useState<Team | null>(null);
-  const [pointsText, setPointsText] = useState('');
-  const [belote, setBelote] = useState<Team | null>(null);
-  const [capot, setCapot] = useState<Team | null>(null);
+  const { playerName, saveDraft } = useSalon();
+  // La saisie est enregistrée avec la partie : on la retrouve en revenant sur la partie.
+  const draft: DealDraft = game.draft ?? EMPTY_DRAFT;
+  const { taker, trump, enteredTeam, pointsText, belote, capot } = draft;
+  const change = (patch: Partial<DealDraft>) => saveDraft(game.id, { ...draft, ...patch });
+  const setTaker = (taker: Seat | null) => change({ taker });
+  const setTrump = (trump: Trump | null) => change({ trump });
+  const setBelote = (belote: Team | null) => change({ belote });
+  const setCapot = (capot: Team | null) => change({ capot });
 
   const points = parseInt(pointsText, 10);
   const pointsInRange = points >= 0 && points <= TOTAL_CARD_POINTS;
   const pointsValid = capot !== null || (enteredTeam !== null && pointsInRange);
   const complete = taker !== null && trump !== null && pointsValid;
-
-  const reset = () => {
-    setTaker(null); setTrump(null); setEnteredTeam(null); setPointsText(''); setBelote(null); setCapot(null);
-  };
 
   const deal: PlayedDeal | null = complete
     ? {
@@ -214,7 +215,6 @@ function DealForm({
   const submit = () => {
     if (!deal) return;
     onSubmit(deal);
-    reset();
   };
 
   // La case de l'autre équipe affiche le complément à 162 (hors belote).
@@ -279,8 +279,7 @@ function DealForm({
                   value={fieldValue(team)}
                   onChangeText={(t) => {
                     const digits = t.replace(/[^0-9]/g, '');
-                    setEnteredTeam(digits === '' ? null : team);
-                    setPointsText(digits);
+                    change({ enteredTeam: digits === '' ? null : team, pointsText: digits });
                   }}
                 />
               </View>

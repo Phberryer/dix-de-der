@@ -55,6 +55,17 @@ export interface Game {
   extensions?: number[];
   // Victoire sur capot acceptée (plutôt que prolongée).
   winConfirmed?: boolean;
+  // Donne en cours de saisie, pas encore validée.
+  draft?: DealDraft;
+}
+
+export interface DealDraft {
+  taker: Seat | null;
+  trump: Trump | null;
+  enteredTeam: Team | null;
+  pointsText: string;
+  belote: Team | null;
+  capot: Team | null;
 }
 
 export interface Salon {

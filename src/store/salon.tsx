@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { computeGame } from '../engine/scoring';
-import { Deal, Game, GameSettings, PlayedDeal, Player, Salon, Seat } from '../engine/types';
+import { Deal, DealDraft, Game, GameSettings, PlayedDeal, Player, Salon, Seat } from '../engine/types';
 
 const STORAGE_KEY = 'dix-de-der/salon/v1';
 
@@ -25,6 +25,7 @@ interface SalonApi {
   addDeal: (gameId: string, deal: Deal) => void;
   undoLastDeal: (gameId: string) => void;
   updateDeal: (gameId: string, index: number, change: Partial<PlayedDeal>) => void;
+  saveDraft: (gameId: string, draft: DealDraft | undefined) => void;
   confirmCapotWin: (gameId: string) => void;
   extendGame: (gameId: string) => void;
   deleteGame: (gameId: string) => void;
@@ -88,7 +89,11 @@ export function SalonProvider({ children }: { children: ReactNode }) {
       update((s) => ({ ...s, games: [...s.games, game] }));
       return game;
     },
-    addDeal: (gameId, deal) => updateGame(gameId, (g) => ({ ...g, deals: [...g.deals, deal] })),
+    // Valider une donne efface la saisie en cours, sauf pour une donne passée.
+    addDeal: (gameId, deal) => updateGame(gameId, (g) => ({
+      ...g, deals: [...g.deals, deal], draft: deal.kind === 'played' ? undefined : g.draft,
+    })),
+    saveDraft: (gameId, draft) => updateGame(gameId, (g) => ({ ...g, draft })),
     // Annuler la donne d'un capot annule aussi la prolongation choisie après elle.
     undoLastDeal: (gameId) => updateGame(gameId, (g) => {
       const deals = g.deals.slice(0, -1);
