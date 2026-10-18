@@ -27,9 +27,7 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm test
-      - run: npx expo export --platform web
-      # GitHub Pages ignore les dossiers qui commencent par « _ » sans ce fichier.
-      - run: touch dist/.nojekyll
+      - run: npm run export:web
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

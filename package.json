@@ -30,7 +30,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest"
+    "test": "jest",
+    "export:web": "expo export --platform web && node scripts/after-export.js"
   },
   "private": true,
   "jest": {
