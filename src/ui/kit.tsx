@@ -1,6 +1,6 @@
 // Petits composants d'interface réutilisés dans tous les écrans.
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 export const colors = {
@@ -79,6 +79,47 @@ export function Chip({
   );
 }
 
+export interface SegmentOption<T> {
+  value: T;
+  label: string;
+  color?: string; // couleur de l'option (texte et fond une fois choisie)
+  weight?: number; // largeur relative (1 par défaut)
+}
+
+// Une rangée de choix qui occupe toute la largeur de l'écran, sur une seule ligne.
+// La taille du texte s'adapte pour que chaque libellé tienne dans sa case.
+export function Segmented<T>({
+  options, value, onChange, maxFontSize = 17,
+}: { options: SegmentOption<T>[]; value: T; onChange: (v: T) => void; maxFontSize?: number }) {
+  const [width, setWidth] = useState(0);
+  const gap = 6;
+  const totalWeight = options.reduce((sum, o) => sum + (o.weight ?? 1), 0);
+  const free = Math.max(width - gap * (options.length - 1), 0);
+  return (
+    <View style={{ flexDirection: 'row', gap }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {options.map((o) => {
+        const selected = o.value === value;
+        const color = o.color ?? colors.felt;
+        const cell = (free * (o.weight ?? 1)) / totalWeight;
+        // Environ 0,6 × la taille de police par caractère, avec 12 px de marge intérieure.
+        const fontSize = width ? Math.max(9, Math.min(maxFontSize, (cell - 12) / (o.label.length * 0.6))) : maxFontSize;
+        return (
+          <Pressable
+            key={String(o.value)}
+            accessibilityRole="radio"
+            accessibilityLabel={o.label}
+            accessibilityState={{ selected }}
+            onPress={() => onChange(o.value)}
+            style={[styles.segment, { flex: o.weight ?? 1, borderColor: color }, selected && { backgroundColor: color }]}
+          >
+            <Text numberOfLines={1} style={{ fontSize, fontWeight: '600', color: selected ? '#FFF' : color }}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function Row({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   return <View style={[styles.row, style]}>{children}</View>;
 }
@@ -100,6 +141,10 @@ export const styles = StyleSheet.create({
   buttonLabel: { color: '#FFF', fontSize: 16, fontWeight: '600' },
   chip: { borderWidth: 1.5, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
   chipLabel: { fontSize: 15, fontWeight: '600' },
+  segment: {
+    borderWidth: 1.5, borderRadius: 10, minHeight: 44, paddingHorizontal: 6,
+    alignItems: 'center', justifyContent: 'center',
+  },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   input: {
     borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,

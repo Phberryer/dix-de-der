@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { computeGame } from '../engine/scoring';
-import { Deal, Game, GameSettings, Player, Salon, Seat } from '../engine/types';
+import { Deal, Game, GameSettings, PlayedDeal, Player, Salon, Seat } from '../engine/types';
 
 const STORAGE_KEY = 'dix-de-der/salon/v1';
 
@@ -24,6 +24,7 @@ interface SalonApi {
   createGame: (seats: Game['seats'], firstDealer: Seat, settings: GameSettings) => Game;
   addDeal: (gameId: string, deal: Deal) => void;
   undoLastDeal: (gameId: string) => void;
+  updateDeal: (gameId: string, index: number, change: Partial<PlayedDeal>) => void;
   deleteGame: (gameId: string) => void;
   playerName: (id: string) => string;
 }
@@ -85,6 +86,10 @@ export function SalonProvider({ children }: { children: ReactNode }) {
     },
     addDeal: (gameId, deal) => updateGame(gameId, (g) => ({ ...g, deals: [...g.deals, deal] })),
     undoLastDeal: (gameId) => updateGame(gameId, (g) => ({ ...g, deals: g.deals.slice(0, -1) })),
+    updateDeal: (gameId, index, change) => updateGame(gameId, (g) => ({
+      ...g,
+      deals: g.deals.map((d, i) => (i === index && d.kind === 'played' ? { ...d, ...change } : d)),
+    })),
     deleteGame: (gameId) => update((s) => ({ ...s, games: s.games.filter((g) => g.id !== gameId) })),
     playerName: (id) => salon.players.find((p) => p.id === id)?.name ?? '?',
   }), [ready, salon, update, updateGame]);
