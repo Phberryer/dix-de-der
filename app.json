@@ -21,7 +21,12 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "output": "static",
-      "bundler": "metro"
+      "bundler": "metro",
+      "name": "Dix de Der",
+      "shortName": "Dix de Der",
+      "lang": "fr",
+      "themeColor": "#1F5F3F",
+      "backgroundColor": "#F4F1EA"
     },
     "scheme": "dixdeder",
     "plugins": [
