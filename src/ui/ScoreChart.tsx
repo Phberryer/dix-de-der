@@ -9,7 +9,7 @@ import { colors } from './kit';
 
 export function ScoreChart({ totals, target, labels }: { totals: Score[]; target: number; labels: [string, string] }) {
   const [width, setWidth] = useState(0);
-  const height = 200;
+  const height = 300;
   const pad = { left: 36, right: 12, top: 12, bottom: 24 };
 
   const points = [{ A: 0, B: 0 }, ...totals];
